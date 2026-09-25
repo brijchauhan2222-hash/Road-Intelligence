@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #0f172a; color: #f8fafc; }
         #map { height: 100%; width: 100%; border-radius: 0.5rem; background-color: #1e293b; min-height: 520px; }
         .pane { background-color: #1e293b; border: 1px solid #334155; }
         ::-webkit-scrollbar { width: 8px; }
@@ -19,28 +19,413 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-4 gap-4">
+
     <!-- HEADER -->
-    <header class="flex justify-between items-center pane p-4 rounded-lg shadow-lg flex-shrink-0">
+    <header class="flex justify-between items-center pane p-4 rounded-lg shadow-lg">
         <div>
-            <h1 class="text-xl font-bold text-blue-400">RoadSafe Intelligence <span class="text-gray-400 font-normal">— Delhi-NCR Safety Command Center</span></h1>
-            <p class="text-sm text-gray-400">Mode: Merged Serverless Deployment (Google Roads API Wired)</p>
+            <h1 class="text-xl font-bold text-blue-400">
+                RoadSafe Intelligence
+                <span class="text-gray-400 font-normal">— Delhi-NCR Safety Command Center</span>
+            </h1>
+            <p class="text-sm text-gray-400">Mode: Local + Google Roads Snap (client-side)</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-emerald-500/40 text-xs text-emerald-300">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                 <span>NCR Dataset Loaded</span>
             </div>
-            <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-semibold text-sm transition">Export PDF</button>
+            <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-semibold text-sm transition">
+                Export PDF
+            </button>
         </div>
     </header>
 
     <!-- 3-PANE WORKSPACE -->
     <main class="grid grid-cols-12 gap-4 flex-1 min-h-0">
-        
+
         <!-- LEFT: CONTROLS -->
         <aside class="col-span-3 pane p-4 rounded-lg flex flex-col gap-4 shadow-lg overflow-y-auto">
             <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase">Layer & Time Controls</h2>
-            
+
             <div class="flex flex-col gap-2">
                 <label class="text-sm">Regional Risk Filter:</label>
-                <select id="riskFilterSelect" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm
+                <select id="riskFilterSelect"
+                        class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white outline-none focus:border-blue-500">
+                    <option value="ALL">All Network Corridors</option>
+                    <option value="SEVERE">Severe Risk Only (>75)</option>
+                    <option value="MODERATE">Moderate & Severe (>50)</option>
+                </select>
+            </div>
+
+            <hr class="border-slate-700 my-1">
+
+            <div class="flex flex-col gap-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="forecastToggle" class="w-4 h-4 accent-blue-500">
+                    <span class="text-sm font-semibold text-blue-300">Predictive Risk (+24h Forecast)</span>
+                </label>
+                <p class="text-xs text-gray-400 pl-6">
+                    Forward-looking dynamic weather and atmospheric moisture multipliers.
+                </p>
+            </div>
+
+            <div class="mt-auto bg-slate-800/60 border border-slate-700 p-3 rounded text-xs text-gray-400 flex flex-col gap-1">
+                <span class="font-bold text-gray-200">System Telemetry:</span>
+                <span>Active Corridors: <b id="cachedCount" class="text-emerald-400">0</b></span>
+                <span>Rendered Links: <b id="renderedCount" class="text-emerald-400">0</b></span>
+                <span id="snapStatus" class="text-xs text-slate-500 mt-1">Snap: idle</span>
+            </div>
+        </aside>
+
+        <!-- CENTER: MAP CANVAS -->
+        <section class="col-span-6 pane p-2 rounded-lg shadow-lg relative flex flex-col min-h-[520px]">
+            <div id="map" class="flex-1 rounded-md"></div>
+
+            <div class="absolute top-4 right-4 bg-slate-900/90 px-3 py-2 rounded text-xs border border-slate-700 z-[1000] backdrop-blur-sm">
+                <b>Local Severity Index:</b><br>
+                <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Severe (75–100)<br>
+                <span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span> Moderate (50–74)<br>
+                <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 mr-1"></span> Acceptable (&lt;50)
+            </div>
+        </section>
+
+        <!-- RIGHT: INSPECTOR & SANDBOX -->
+        <aside class="col-span-3 pane p-4 rounded-lg flex flex-col gap-4 shadow-lg overflow-y-auto">
+            <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase">Segment Risk Inspector</h2>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-xs text-gray-400 font-semibold">Local Corridor Search:</label>
+                <input type="text" id="searchInput" list="segmentDatalist"
+                       class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white font-semibold outline-none focus:border-blue-500"
+                       placeholder="🔍 Type area or route..." autocomplete="off">
+                <datalist id="segmentDatalist"></datalist>
+            </div>
+
+            <div id="scoreDisplay"
+                 class="p-3 rounded-lg text-center font-bold text-xl border border-slate-700 bg-slate-800 flex-shrink-0 mt-2">
+                Risk Score: <span id="currentScoreValue">--</span> / 100
+            </div>
+
+            <div class="text-sm bg-slate-800 p-3 rounded border border-slate-700 flex-shrink-0">
+                <span class="font-bold text-gray-300 block mb-1">Top Local Contributors (TreeSHAP):</span>
+                <span id="shapDrivers" class="text-gray-400">Select a local corridor...</span>
+            </div>
+
+            <hr class="border-slate-700">
+
+            <div>
+                <h3 class="text-sm font-bold text-blue-400 mb-3">Dynamic Intervention Sandbox</h3>
+                <div class="flex flex-col gap-3 text-sm">
+                    <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-800 p-2 rounded transition">
+                        <input type="checkbox" id="chkSpeed" class="w-4 h-4 mt-0.5 accent-blue-500 intervention-chk" disabled>
+                        <div>
+                            <span class="block font-semibold">Speed Limit Reduction</span>
+                            <span class="text-xs text-gray-400">-12 pts (CRF modifier)</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-800 p-2 rounded transition">
+                        <input type="checkbox" id="chkHfst" class="w-4 h-4 mt-0.5 accent-blue-500 intervention-chk" disabled>
+                        <div>
+                            <span class="block font-semibold">High-Friction Surface (HFST)</span>
+                            <span class="text-xs text-gray-400">Mitigates dynamic weather multipliers</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-800 p-2 rounded transition">
+                        <input type="checkbox" id="chkPed" class="w-4 h-4 mt-0.5 accent-blue-500 intervention-chk" disabled>
+                        <div>
+                            <span class="block font-semibold">Pedestrian Refuge Island</span>
+                            <span class="text-xs text-gray-400">Eliminates VRU conflict penalty</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer hover:bg-slate-800 p-2 rounded transition">
+                        <input type="checkbox" id="chkTurn" class="w-4 h-4 mt-0.5 accent-blue-500 intervention-chk" disabled>
+                        <div>
+                            <span class="block font-semibold">Protected Left-Turn Phase</span>
+                            <span class="text-xs text-gray-400">Reduces peak intersection shear (-6 pts)</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- BOTTOM: LOCATION COMPARISON MODULE -->
+    <footer class="pane p-4 rounded-lg shadow-lg">
+        <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase mb-4">
+            Local Location & Corridor Comparison Engine
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-600 bg-slate-800 text-gray-300">
+                        <th class="p-3 font-semibold w-1/4">Evaluation Metric</th>
+                        <th class="p-3 font-semibold w-3/8 border-l border-slate-600">
+                            <select id="compASelect"
+                                    class="bg-transparent text-white font-bold outline-none w-full cursor-pointer focus:text-blue-300">
+                                <option value="">Select Location A...</option>
+                            </select>
+                        </th>
+                        <th class="p-3 font-semibold w-3/8 border-l border-slate-600">
+                            <select id="compBSelect"
+                                    class="bg-transparent text-white font-bold outline-none w-full cursor-pointer focus:text-blue-300">
+                                <option value="">Select Location B...</option>
+                            </select>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonTableBody">
+                    <tr>
+                        <td colspan="3" class="p-4 text-center text-gray-500 italic">
+                            Select corridors above to perform side-by-side diagnostic comparisons.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </footer>
+
+    <script>
+        // ─── CONFIG ───────────────────────────────────────────────────────────
+        const GOOGLE_ROADS_API_KEY = "AIzaSyDuxmVLho2GQ77Xdq2qafXdbwNpB2eF9f0";
+        const MAPTILER_KEY = "XCfg1JwEXr5FzLNEj3BR";
+
+        // ─── LOCAL NETWORK DATA ───────────────────────────────────────────────
+        const localNetworkData = [
+            {
+                id: "ncr_son_01",
+                name: "Sector 14 Arterial [ID:001]",
+                baseline_score: 84,
+                primary_driver: "High-Speed Commercial Overtaking (+32%), Poor Luminaire Output (+20%)",
+                weather_sensitivity: 18,
+                vulnerable_users: "Moderate (Students & Local Two-Wheelers)",
+                ped_penalty: 9,
+                coords: [[28.9300, 77.0800], [28.9600, 77.0600], [28.9900, 77.0400], [29.0200, 77.0300]]
+            },
+            {
+                id: "ncr_son_02",
+                name: "Civil Lines Link [ID:002]",
+                baseline_score: 62,
+                primary_driver: "Unsignalized Median Breaks (+24%), Peak Commute Congestion (+14%)",
+                weather_sensitivity: 12,
+                vulnerable_users: "High (Pedestrians: 640/hr, Cyclists: 120/hr)",
+                ped_penalty: 9,
+                coords: [[28.9931, 77.0151], [28.9950, 77.0050], [29.0010, 76.9950]]
+            },
+            {
+                id: "ncr_son_03",
+                name: "Murthal Road Connector [ID:003]",
+                baseline_score: 76,
+                primary_driver: "Heavy Freight Infiltration (+29%), Shoulder Degradation (+17%)",
+                weather_sensitivity: 21,
+                vulnerable_users: "Moderate (Roadside Dhabas & Pedestrians)",
+                ped_penalty: 9,
+                coords: [[29.0300, 77.0400], [29.0350, 77.0600], [29.0400, 77.0900]]
+            },
+            {
+                id: "ncr_del_01",
+                name: "New Delhi: Pragati Maidan Corridor [ID:004]",
+                baseline_score: 68,
+                primary_driver: "Event Surges & Complex Weaving (+28%), Intersection Shear (+15%)",
+                weather_sensitivity: 14,
+                vulnerable_users: "High (Event-goers & Metro Commuters)",
+                ped_penalty: 9,
+                coords: [[28.6139, 77.2425], [28.6250, 77.2435], [28.6350, 77.2450]]
+            },
+            {
+                id: "ncr_del_02",
+                name: "New Delhi: Outer Ring Road [ID:005]",
+                baseline_score: 81,
+                primary_driver: "Unrestricted Speed Differentials (+34%), Wet Surface Hydroplaning (+19%)",
+                weather_sensitivity: 24,
+                vulnerable_users: "Low (Grade-separated access)",
+                ped_penalty: 0,
+                coords: [[28.6950, 77.1450], [28.7050, 77.1550], [28.7150, 77.1650]]
+            },
+            {
+                id: "ncr_del_03",
+                name: "New Delhi: Connaught Place Inner Circle [ID:006]",
+                baseline_score: 48,
+                primary_driver: "Pedestrian Right-of-Way Conflicts (+25%), Low Angle Sun Glare (+8%)",
+                weather_sensitivity: 12,
+                vulnerable_users: "Very High (Dense retail pedestrian activity)",
+                ped_penalty: 9,
+                coords: [[28.6328, 77.2185], [28.6315, 77.2200], [28.6300, 77.2185], [28.6315, 77.2170], [28.6328, 77.2185]]
+            },
+            {
+                id: "ncr_gur_01",
+                name: "Gurugram: NH48 Expressway [ID:007]",
+                baseline_score: 87,
+                primary_driver: "High-Volume Weaving (+39%), Toll Plaza Convergence (+25%)",
+                weather_sensitivity: 26,
+                vulnerable_users: "Low (Pure vehicular access)",
+                ped_penalty: 0,
+                coords: [[28.5300, 77.1000], [28.4800, 77.0600], [28.4200, 77.0100]]
+            },
+            {
+                id: "ncr_noi_01",
+                name: "Noida: Greater Noida Expressway [ID:008]",
+                baseline_score: 74,
+                primary_driver: "Unregulated High Speeds (+33%), Winter Fog Visibility Loss (+28%)",
+                weather_sensitivity: 22,
+                vulnerable_users: "Low (Fenced expressway boundary)",
+                ped_penalty: 0,
+                coords: [[28.5400, 77.3300], [28.4800, 77.3900], [28.4200, 77.4500]]
+            }
+        ];
+
+        // ─── STATE ────────────────────────────────────────────────────────────
+        const segmentStore = new Map();
+        const renderedLayers = new Map();
+        let activeSegmentId = "ncr_son_01";
+        let isForecastActive = false;
+        let activeRiskFilter = "ALL";
+        let map;
+
+        // ─── DOM REFERENCES ───────────────────────────────────────────────────
+        const searchInput = document.getElementById('searchInput');
+        const datalist = document.getElementById('segmentDatalist');
+        const selCompA = document.getElementById('compASelect');
+        const selCompB = document.getElementById('compBSelect');
+        const chkForecast = document.getElementById('forecastToggle');
+        const riskFilterSelect = document.getElementById('riskFilterSelect');
+        const interventionChks = document.querySelectorAll('.intervention-chk');
+        const snapStatusEl = document.getElementById('snapStatus');
+
+        // ─── INIT ─────────────────────────────────────────────────────────────
+        function initApp() {
+            map = L.map('map', {
+                zoomControl: true,
+                preferCanvas: true,
+                minZoom: 8,
+                maxZoom: 18
+            }).setView([28.80, 77.15], 10);
+
+            // Primary dark tiles (MapTiler)
+            const primaryTiles = L.tileLayer(
+                `https://api.maptiler.com/maps/dataviz-dark/256/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+                {
+                    attribution: '&copy; MapTiler &copy; OpenStreetMap',
+                    maxZoom: 20,
+                    noWrap: true
+                }
+            );
+
+            // Fallback dark tiles (Carto)
+            const fallbackTiles = L.tileLayer(
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }
+            );
+
+            primaryTiles.addTo(map);
+            primaryTiles.on('tileerror', () => {
+                console.warn('MapTiler tiles failed – switching to Carto dark fallback');
+                map.removeLayer(primaryTiles);
+                fallbackTiles.addTo(map);
+            });
+
+            // Load data
+            localNetworkData.forEach(c => segmentStore.set(c.id, c));
+            document.getElementById('cachedCount').textContent = segmentStore.size;
+
+            // Event listeners
+            searchInput.addEventListener('input', handleSearchSelect);
+            selCompA.addEventListener('change', updateComparisonTable);
+            selCompB.addEventListener('change', updateComparisonTable);
+            riskFilterSelect.addEventListener('change', e => {
+                activeRiskFilter = e.target.value;
+                filterAndRenderLayers();
+            });
+            chkForecast.addEventListener('change', e => {
+                isForecastActive = e.target.checked;
+                refreshAllLayerStyles();
+                updateUI();
+                updateComparisonTable();
+            });
+            interventionChks.forEach(chk => chk.addEventListener('change', updateUI));
+
+            updateDropdownOptions();
+            filterAndRenderLayers();
+            updateUI();
+
+            // Default comparison pair
+            selCompA.value = "ncr_son_01";
+            selCompB.value = "ncr_del_01";
+            updateComparisonTable();
+        }
+
+        // ─── GOOGLE ROADS SNAP (actually updates geometry) ────────────────────
+        async function applyGoogleRoadsAPI(segment) {
+            if (!segment || !segment.coords || segment.coords.length < 2) return;
+
+            const pathString = segment.coords
+                .map(c => `${c[0]},${c[1]}`)
+                .join('|');
+
+            const url = `https://roads.googleapis.com/v1/snapToRoads?path=${encodeURIComponent(pathString)}&interpolate=true&key=${GOOGLE_ROADS_API_KEY}`;
+
+            snapStatusEl.textContent = 'Snap: requesting…';
+            snapStatusEl.className = 'text-xs text-amber-400 mt-1';
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.snappedPoints && data.snappedPoints.length > 0) {
+                    const snappedCoords = data.snappedPoints.map(p => [
+                        p.location.latitude,
+                        p.location.longitude
+                    ]);
+
+                    // Update the store so future renders use the better geometry
+                    segment.coords = snappedCoords;
+
+                    // Update the live polyline if it exists
+                    const layer = renderedLayers.get(segment.id);
+                    if (layer) {
+                        layer.setLatLngs(snappedCoords);
+                    }
+
+                    snapStatusEl.textContent = `Snap: success (${snappedCoords.length} pts)`;
+                    snapStatusEl.className = 'text-xs text-emerald-400 mt-1';
+                    console.log(`Snapped ${segment.name}:`, snappedCoords.length, 'points');
+                } else {
+                    snapStatusEl.textContent = 'Snap: no points returned';
+                    snapStatusEl.className = 'text-xs text-orange-400 mt-1';
+                }
+            } catch (err) {
+                console.warn('Google Roads API failed (CORS / key / quota). Using original geometry.', err);
+                snapStatusEl.textContent = 'Snap: failed → static geometry';
+                snapStatusEl.className = 'text-xs text-red-400 mt-1';
+            }
+        }
+
+        // ─── SEARCH ───────────────────────────────────────────────────────────
+        function handleSearchSelect(e) {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) return;
+
+            let matchedId = null;
+            segmentStore.forEach((seg, id) => {
+                if (seg.name.toLowerCase() === query || seg.name.toLowerCase().includes(query)) {
+                    matchedId = id;
+                }
+            });
+
+            if (matchedId) {
+                selectSegment(matchedId);
+            }
+        }
+
+        function selectSegment(id) {
+            activeSegmentId = id;
+            resetInterventions();
+            updateUI();
