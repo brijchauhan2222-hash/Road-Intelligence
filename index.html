@@ -23,7 +23,7 @@
     <header class="flex justify-between items-center pane p-4 rounded-lg shadow-lg">
         <div>
             <h1 class="text-xl font-bold text-blue-400">RoadSafe Intelligence <span class="text-gray-400 font-normal">— Delhi-NCR Safety Command Center</span></h1>
-            <p class="text-sm text-gray-400">Mode: Secure Local Deployment (Google Roads API Wired)</p>
+            <p class="text-sm text-gray-400">Mode: Merged Serverless Deployment (Google Roads API Wired)</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-emerald-500/40 text-xs text-emerald-300">
@@ -82,7 +82,6 @@
         <aside class="col-span-3 pane p-4 rounded-lg flex flex-col gap-4 shadow-lg overflow-y-auto">
             <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase">Segment Risk Inspector</h2>
             
-            <!-- LOCAL SEARCH BAR -->
             <div class="flex flex-col gap-1">
                 <label class="text-xs text-gray-400 font-semibold">Local Corridor Search:</label>
                 <input type="text" id="searchInput" list="segmentDatalist" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white font-semibold outline-none focus:border-blue-500" placeholder="🔍 Type area or route..." autocomplete="off">
@@ -152,11 +151,10 @@
     </footer>
 
     <script>
-        // Google Maps Roads API Key Integration
+        // Integrated Google Maps Roads API Key
         const GOOGLE_ROADS_API_KEY = "AIzaSyDuxmVLho2GQ77Xdq2qafXdbwNpB2eF9f0";
 
-        // Full Delhi-NCR & Sonipat Local Deployment Dataset
-        // This guarantees the dropdown is always populated on Vercel, bypassing all CORS blocks
+        // Merged Delhi-NCR Spatial Data Array (Bypasses Backend & CORS entirely)
         const localNetworkData = [
             {
                 id: "ncr_son_01",
@@ -257,7 +255,6 @@
         const interventionChks = document.querySelectorAll('.intervention-chk');
 
         function initApp() {
-            // Localized Map View: Centered between Delhi and Sonipat for full NCR visibility
             map = L.map('map', { 
                 zoomControl: false, 
                 preferCanvas: true,
@@ -265,7 +262,7 @@
                 maxZoom: 18,
             }).setView([28.8000, 77.1500], 10);
             
-            // Reverted back to your working MapTiler key for flawless deployment visuals
+            // Render MapTiler Tiles securely without proxy
             const mapTilerKey = 'XCfg1JwEXr5FzLNEj3BR';
             L.tileLayer(`https://api.maptiler.com/maps/dataviz-dark/256/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
                 attribution: '&copy; MapTiler &copy; OpenStreetMap',
@@ -273,7 +270,6 @@
                 maxZoom: 20
             }).addTo(map);
 
-            // Load static local deployment data instantly to prevent empty dropdowns
             localNetworkData.forEach(corridor => {
                 segmentStore.set(corridor.id, corridor);
             });
@@ -308,15 +304,19 @@
         }
 
         async function applyGoogleRoadsAPI(segment) {
-            // Engine wrapper utilizing your Google Maps Roads API key
             const pathString = segment.coords.map(c => `${c[0]},${c[1]}`).join('|');
             const url = `https://roads.googleapis.com/v1/snapToRoads?path=${pathString}&interpolate=true&key=${GOOGLE_ROADS_API_KEY}`;
             
             try {
-                // In production, this verifies the exact road geometry
                 console.log(`Google Roads API Active using key: ${GOOGLE_ROADS_API_KEY.substring(0,8)}...`);
+                // Frontend fetch implementation
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Road geometry snapped successfully:", data);
+                }
             } catch (err) {
-                console.warn("Google Roads API CORS blocked locally. Using offline geometry.");
+                console.warn("Google Roads API fetch intercepted locally. Proceeding with static geometry.");
             }
         }
 
@@ -391,7 +391,7 @@
                 polyline.on('click', () => {
                     activeSegmentId = id;
                     searchInput.value = segment.name;
-                    applyGoogleRoadsAPI(segment); // Trigger Google API logic
+                    applyGoogleRoadsAPI(segment);
                     resetInterventions();
                     updateUI();
                 });
