@@ -26,7 +26,7 @@
                 RoadSafe Intelligence
                 <span class="text-gray-400 font-normal">— Delhi-NCR Safety Command Center</span>
             </h1>
-            <p class="text-sm text-gray-400">Mode: Local Dataset + Optional Google Roads Snap</p>
+            <p class="text-sm text-gray-400">Mode: Local Dataset + MapTiler + Google Roads Snap</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-emerald-500/40 text-xs text-emerald-300">
@@ -161,12 +161,13 @@
 
 <script>
 // ============================================================
-// CONFIG
+// CONFIG – YOUR MAPTILER KEY
 // ============================================================
+const MAPTILER_KEY = "XCfg1JwEXr5FzLNEj3BR";
 const GOOGLE_ROADS_API_KEY = "AIzaSyDuxmVLho2GQ77Xdq2qafXdbwNpB2eF9f0";
 
 // ============================================================
-// LOCAL NETWORK DATA  (8 corridors)
+// LOCAL NETWORK DATA
 // ============================================================
 const localNetworkData = [
     {
@@ -280,9 +281,7 @@ function initApp() {
     console.log("=== RoadSafe init starting ===");
 
     // 1. Load data FIRST
-    localNetworkData.forEach(c => {
-        segmentStore.set(c.id, c);
-    });
+    localNetworkData.forEach(c => segmentStore.set(c.id, c));
     document.getElementById('cachedCount').textContent = segmentStore.size;
     console.log("Loaded corridors:", segmentStore.size);
 
@@ -299,18 +298,40 @@ function initApp() {
         maxZoom: 18
     }).setView([28.80, 77.15], 10);
 
-    // Reliable free dark tiles (always works)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
+    // ── PRIMARY: MapTiler with YOUR key ──
+    const mapTilerLayer = L.tileLayer(
+        `https://api.maptiler.com/maps/dataviz-dark/256/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+        {
+            attribution: '&copy; MapTiler &copy; OpenStreetMap',
+            maxZoom: 20,
+            noWrap: true
+        }
+    );
+
+    // ── FALLBACK: Carto Dark (always works) ──
+    const fallbackLayer = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }
+    );
+
+    mapTilerLayer.addTo(map);
+
+    // If MapTiler fails → switch to fallback
+    mapTilerLayer.on('tileerror', function() {
+        console.warn('MapTiler tile error – switching to Carto dark fallback');
+        map.removeLayer(mapTilerLayer);
+        fallbackLayer.addTo(map);
+    });
 
     // 3. Force size (critical for blank maps)
     setTimeout(() => {
         map.invalidateSize();
         console.log("Map size invalidated");
-    }, 200);
+    }, 250);
 
     // 4. Event listeners
     searchInput.addEventListener('input', handleSearchSelect);
@@ -345,7 +366,7 @@ function initApp() {
 }
 
 // ============================================================
-// GOOGLE ROADS SNAP (optional – non-blocking)
+// GOOGLE ROADS SNAP (optional)
 // ============================================================
 async function applyGoogleRoadsAPI(segment) {
     if (!segment || !segment.coords || segment.coords.length < 2) return;
@@ -411,7 +432,6 @@ function selectSegment(id) {
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
     }
 
-    // Try snap (non-blocking)
     applyGoogleRoadsAPI(target);
 }
 
@@ -443,7 +463,6 @@ function getScoreStyle(score) {
 // RENDER LAYERS
 // ============================================================
 function filterAndRenderLayers() {
-    // Clear old
     renderedLayers.forEach(l => map.removeLayer(l));
     renderedLayers.clear();
 
