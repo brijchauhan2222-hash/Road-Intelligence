@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoadSafe Intelligence - Global Command Center</title>
+    <title>RoadSafe Intelligence - Local Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -22,13 +22,13 @@
     <!-- HEADER -->
     <header class="flex justify-between items-center pane p-4 rounded-lg shadow-lg">
         <div>
-            <h1 class="text-xl font-bold text-blue-400">RoadSafe Intelligence <span class="text-gray-400 font-normal">— Planetary Safety Command Center</span></h1>
-            <p class="text-sm text-gray-400">Mode: Secure Offline Deployment (CORS-Free)</p>
+            <h1 class="text-xl font-bold text-blue-400">RoadSafe Intelligence <span class="text-gray-400 font-normal">— Delhi-NCR Safety Command Center</span></h1>
+            <p class="text-sm text-gray-400">Mode: Secure Local Deployment (CORS-Free)</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-emerald-500/40 text-xs text-emerald-300">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>Global Dataset Loaded</span>
+                <span>NCR Dataset Loaded</span>
             </div>
             <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-semibold text-sm transition">Export PDF</button>
         </div>
@@ -42,7 +42,7 @@
             <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase">Layer & Time Controls</h2>
             
             <div class="flex flex-col gap-2">
-                <label class="text-sm">Global Risk Filter:</label>
+                <label class="text-sm">Regional Risk Filter:</label>
                 <select id="riskFilterSelect" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white outline-none focus:border-blue-500">
                     <option value="ALL">All Network Corridors</option>
                     <option value="SEVERE">Severe Risk Only (>75)</option>
@@ -71,7 +71,7 @@
         <section class="col-span-6 pane p-2 rounded-lg shadow-lg relative flex flex-col">
             <div id="map" class="flex-1"></div>
             <div class="absolute top-4 right-4 bg-slate-900/90 px-3 py-2 rounded text-xs border border-slate-700 z-[1000] backdrop-blur-sm">
-                <b>Global Severity Index:</b><br>
+                <b>Local Severity Index:</b><br>
                 <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Severe (75–100)<br>
                 <span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1"></span> Moderate (50–74)<br>
                 <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 mr-1"></span> Acceptable (&lt;50)
@@ -82,10 +82,10 @@
         <aside class="col-span-3 pane p-4 rounded-lg flex flex-col gap-4 shadow-lg overflow-y-auto">
             <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase">Segment Risk Inspector</h2>
             
-            <!-- GLOBAL SEARCH BAR -->
+            <!-- LOCAL SEARCH BAR -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs text-gray-400 font-semibold">Worldwide Corridor Search:</label>
-                <input type="text" id="searchInput" list="segmentDatalist" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white font-semibold outline-none focus:border-blue-500" placeholder="🔍 Type country, city, or route..." autocomplete="off">
+                <label class="text-xs text-gray-400 font-semibold">Local Corridor Search:</label>
+                <input type="text" id="searchInput" list="segmentDatalist" class="bg-slate-800 border border-slate-600 rounded p-2 text-sm w-full text-white font-semibold outline-none focus:border-blue-500" placeholder="🔍 Type area or route..." autocomplete="off">
                 <datalist id="segmentDatalist"></datalist>
             </div>
 
@@ -95,7 +95,7 @@
 
             <div class="text-sm bg-slate-800 p-3 rounded border border-slate-700 flex-shrink-0">
                 <span class="font-bold text-gray-300 block mb-1">Top Local Contributors (TreeSHAP):</span>
-                <span id="shapDrivers" class="text-gray-400">Select a global corridor...</span>
+                <span id="shapDrivers" class="text-gray-400">Select a local corridor...</span>
             </div>
 
             <hr class="border-slate-700">
@@ -126,7 +126,7 @@
 
     <!-- BOTTOM: LOCATION COMPARISON MODULE -->
     <footer class="pane p-4 rounded-lg shadow-lg">
-        <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase mb-4">Planetary Location & Corridor Comparison Engine</h2>
+        <h2 class="text-sm font-bold tracking-wider text-gray-400 uppercase mb-4">Local Location & Corridor Comparison Engine</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm border-collapse">
                 <thead>
@@ -152,214 +152,114 @@
     </footer>
 
     <script>
-        // Bulletproof Deployment Data: Completely bypasses CORS and API limitations
-        const worldwideNetworkData = [
+        // Bulletproof Local Deployment Data: Delhi-NCR & Sonipat Region
+        const localNetworkData = [
             {
-                id: "asia_ind_01",
-                name: "India: NH44 Delhi-Agra Expressway Corridor",
-                baseline_score: 86,
-                primary_driver: "High-Speed Overtaking (+34%), Dense Fog (+24%)",
-                weather_sensitivity: 16,
-                vulnerable_users: "High (Pedestrians: 580/hr, Two-Wheelers: 2,100/hr)",
+                id: "ncr_son_01",
+                name: "Sonipat: NH44 Bypass (Rajiv Gandhi Education City)",
+                baseline_score: 84,
+                primary_driver: "High-Speed Commercial Overtaking (+32%), Poor Luminaire Output (+20%)",
+                weather_sensitivity: 18,
+                vulnerable_users: "Moderate (Students & Local Two-Wheelers)",
                 ped_penalty: 9,
-                coords: [[28.6139, 77.2090], [28.1472, 77.3260], [27.7500, 77.5800], [27.1767, 78.0081]]
+                coords: [[28.9300, 77.0800], [28.9600, 77.0600], [28.9900, 77.0400], [29.0200, 77.0300]]
             },
             {
-                id: "asia_ind_02",
-                name: "India: Mumbai-Pune Expressway (Bhor Ghat Link)",
-                baseline_score: 79,
-                primary_driver: "Steep Curvature (+31%), Monsoon Surface Hydroplaning (+26%)",
-                weather_sensitivity: 22,
-                vulnerable_users: "Low (Restricted access highway)",
-                ped_penalty: 0,
-                coords: [[19.0760, 72.8777], [18.7557, 73.4150], [18.5204, 73.8567]]
-            },
-            {
-                id: "asia_ind_03",
-                name: "India: Sonipat GT Road Parallel Link (NH44 Sector 14)",
-                baseline_score: 82,
-                primary_driver: "Unsignalized Median Breaks (+38%), Lighting (+19%)",
-                weather_sensitivity: 14,
+                id: "ncr_son_02",
+                name: "Sonipat: Sector 14 Arterial Road",
+                baseline_score: 62,
+                primary_driver: "Unsignalized Median Breaks (+24%), Peak Commute Congestion (+14%)",
+                weather_sensitivity: 12,
                 vulnerable_users: "High (Pedestrians: 640/hr, Cyclists: 120/hr)",
                 ped_penalty: 9,
-                coords: [[28.9931, 77.0151], [29.0200, 77.0350], [29.0550, 77.0600]]
+                coords: [[28.9931, 77.0151], [28.9950, 77.0050], [29.0010, 76.9950]]
             },
             {
-                id: "asia_chn_01",
-                name: "China: G4 Beijing-Hong Kong Arterial (Hebei Section)",
-                baseline_score: 72,
-                primary_driver: "Extreme Heavy Freight Mix (+36%), Winter Glaze (+15%)",
-                weather_sensitivity: 18,
-                vulnerable_users: "Low (Zero active micromobility)",
-                ped_penalty: 0,
-                coords: [[39.9042, 116.4074], [38.0428, 114.5149], [34.7466, 113.6253]]
-            },
-            {
-                id: "asia_jpn_01",
-                name: "Japan: Tomei Expressway (Tokyo-Nagoya Coastal Pass)",
-                baseline_score: 44,
-                primary_driver: "Typhoon Crosswinds (+22%), Seawall Transitions (+12%)",
-                weather_sensitivity: 20,
-                vulnerable_users: "Low (Grade-separated corridor)",
-                ped_penalty: 0,
-                coords: [[35.6762, 139.6503], [35.1815, 136.9066]]
-            },
-            {
-                id: "asia_uae_01",
-                name: "UAE: Sheikh Zayed Road E11 (Dubai-Abu Dhabi Corridor)",
-                baseline_score: 64,
-                primary_driver: "Speed Differential Surges (+42%), Dust Storm Visibility (+18%)",
-                weather_sensitivity: 11,
-                vulnerable_users: "Low (Strict multilane vehicular access)",
-                ped_penalty: 0,
-                coords: [[25.2048, 55.2708], [24.8607, 55.0125], [24.4539, 54.3773]]
-            },
-            {
-                id: "na_usa_01",
-                name: "USA: I-95 East Coast Corridor (New York-Philadelphia)",
-                baseline_score: 83,
-                primary_driver: "Congestion Shear (+36%), Inadequate Luminaire Output (+20%)",
-                weather_sensitivity: 15,
-                vulnerable_users: "Moderate (Curbside transit interchanges)",
-                ped_penalty: 0,
-                coords: [[40.7128, -74.0060], [40.2206, -74.7597], [39.9526, -75.1652]]
-            },
-            {
-                id: "na_usa_02",
-                name: "USA: I-5 West Coast Arterial (Los Angeles-San Diego)",
-                baseline_score: 68,
-                primary_driver: "High-Volume Weaving (+33%), Fog Shear Vectors (+17%)",
-                weather_sensitivity: 13,
-                vulnerable_users: "Low (Freeway classification)",
-                ped_penalty: 0,
-                coords: [[34.0522, -118.2437], [33.6846, -117.8265], [32.7157, -117.1611]]
-            },
-            {
-                id: "na_can_01",
-                name: "Canada: Highway 401 Toronto Metro Freight Transverse",
+                id: "ncr_son_03",
+                name: "Sonipat: Murthal Road Connector",
                 baseline_score: 76,
-                primary_driver: "18-Lane Collector-Express Weaving (+39%), Black Ice (+27%)",
-                weather_sensitivity: 25,
-                vulnerable_users: "Low (Zero pedestrian exposure)",
-                ped_penalty: 0,
-                coords: [[43.7000, -79.6000], [43.7615, -79.4111], [43.7800, -79.2000]]
-            },
-            {
-                id: "na_mex_01",
-                name: "Mexico: Federal Highway 57D (Mexico City-Querétaro)",
-                baseline_score: 88,
-                primary_driver: "Braking Degradation on Mountain Grades (+44%), Speed Variance (+28%)",
-                weather_sensitivity: 17,
-                vulnerable_users: "High (Roadside vendor zones, Pedestrians: 310/hr)",
-                ped_penalty: 9,
-                coords: [[19.4326, -99.1332], [20.0000, -99.5000], [20.5888, -100.3899]]
-            },
-            {
-                id: "eu_gbr_01",
-                name: "UK: M25 London Orbital (Heathrow Southwest Section)",
-                baseline_score: 75,
-                primary_driver: "Peak Weaving Conflicts (+35%), Heavy Pavement Moisture (+21%)",
-                weather_sensitivity: 19,
-                vulnerable_users: "Low (Grade-separated motorway)",
-                ped_penalty: 0,
-                coords: [[51.4700, -0.4543], [51.5200, -0.5100], [51.5800, -0.4900]]
-            },
-            {
-                id: "eu_deu_01",
-                name: "Germany: Autobahn A2 Corridor (Hannover-Berlin Transverse)",
-                baseline_score: 58,
-                primary_driver: "Unrestricted Speed Differentials (+40%), Wet Aquaplaning (+19%)",
+                primary_driver: "Heavy Freight Infiltration (+29%), Shoulder Degradation (+17%)",
                 weather_sensitivity: 21,
-                vulnerable_users: "Low (Pure high-velocity traffic)",
-                ped_penalty: 0,
-                coords: [[52.3759, 9.7320], [52.2600, 10.5300], [52.5200, 13.4050]]
+                vulnerable_users: "Moderate (Roadside Dhabas & Pedestrians)",
+                ped_penalty: 9,
+                coords: [[29.0300, 77.0400], [29.0350, 77.0600], [29.0400, 77.0900]]
             },
             {
-                id: "eu_fra_01",
-                name: "France: Autoroute du Soleil A6/A7 (Lyon Corridor)",
-                baseline_score: 51,
-                primary_driver: "Holiday Commute Surges (+29%), High Temperature Pavement Degradation (+14%)",
+                id: "ncr_del_01",
+                name: "New Delhi: Pragati Maidan Corridor (Mathura Road)",
+                baseline_score: 68,
+                primary_driver: "Event Surges & Complex Weaving (+28%), Intersection Shear (+15%)",
                 weather_sensitivity: 14,
-                vulnerable_users: "Low (Controlled access)",
-                ped_penalty: 0,
-                coords: [[45.7640, 4.8357], [45.1000, 4.8900], [44.5500, 4.7500]]
-            },
-            {
-                id: "eu_ita_01",
-                name: "Italy: Autostrada A1 del Sole (Bologna-Florence Apennines)",
-                baseline_score: 71,
-                primary_driver: "Tunnel-Viaduct Transition Gradients (+37%), Freeze Surface Transitions (+20%)",
-                weather_sensitivity: 23,
-                vulnerable_users: "Low (Restricted motorway)",
-                ped_penalty: 0,
-                coords: [[44.4949, 11.3426], [44.1500, 11.2000], [43.7696, 11.2558]]
-            },
-            {
-                id: "sa_bra_01",
-                name: "Brazil: Rodovia Presidente Dutra (São Paulo-Rio de Janeiro)",
-                baseline_score: 84,
-                primary_driver: "Serra das Araras Mountain Sharp Radii (+42%), Heavy Truck Infiltration (+29%)",
-                weather_sensitivity: 20,
-                vulnerable_users: "Moderate (Informal settlements along periphery)",
+                vulnerable_users: "High (Event-goers & Metro Commuters)",
                 ped_penalty: 9,
-                coords: [[-23.5505, -46.6333], [-22.8000, -44.5000], [-22.9068, -43.1729]]
+                coords: [[28.6139, 77.2425], [28.6250, 77.2435], [28.6350, 77.2450]]
             },
             {
-                id: "sa_arg_01",
-                name: "Argentina: Ruta Nacional 9 (Buenos Aires-Rosario Arterial)",
-                baseline_score: 66,
-                primary_driver: "Agricultural Machinery Speed Disparity (+31%), Nocturnal Fog (+25%)",
-                weather_sensitivity: 18,
-                vulnerable_users: "Moderate (Rural access intersections)",
-                ped_penalty: 0,
-                coords: [[-34.6037, -58.3816], [-33.7000, -59.5000], [-32.9587, -60.6930]]
-            },
-            {
-                id: "af_zaf_01",
-                name: "South Africa: N1 Highway Transverse (Johannesburg-Pretoria)",
+                id: "ncr_del_02",
+                name: "New Delhi: Outer Ring Road (Pitampura Section)",
                 baseline_score: 81,
-                primary_driver: "Extreme Speed Clustering (+37%), Uncontrolled Pedestrian Crossing (+32%)",
-                weather_sensitivity: 17,
-                vulnerable_users: "High (Informal highway crossings: 720/hr)",
-                ped_penalty: 9,
-                coords: [[-26.2041, 28.0473], [-25.9500, 28.1500], [-25.7479, 28.2293]]
-            },
-            {
-                id: "af_egy_01",
-                name: "Egypt: Cairo-Alexandria Desert Road Motorway",
-                baseline_score: 85,
-                primary_driver: "Unregulated High Speeds (+43%), Low Angle Sand Glare (+21%)",
-                weather_sensitivity: 10,
-                vulnerable_users: "High (Multi-lane un-signalized crossings: 420/hr)",
-                ped_penalty: 9,
-                coords: [[30.0444, 31.2357], [30.6000, 30.5000], [31.2001, 29.9187]]
-            },
-            {
-                id: "af_ken_01",
-                name: "Kenya: Northern Corridor A104 (Nairobi-Nakuru Escarpment)",
-                baseline_score: 89,
-                primary_driver: "Rift Valley Descent Braking Failure (+46%), Micro-mobility Congestion (+30%)",
-                weather_sensitivity: 19,
-                vulnerable_users: "High (Pedestrians: 890/hr, Boda-Bodas: 1,400/hr)",
-                ped_penalty: 9,
-                coords: [[-1.2921, 36.8219], [-0.9800, 36.6000], [-0.3031, 36.0800]]
-            },
-            {
-                id: "oc_aus_01",
-                name: "Australia: M1 Pacific Motorway (Sydney-Newcastle)",
-                baseline_score: 53,
-                primary_driver: "Wet Pavement Mountain Transitions (+30%), Heavy Weekend Flow (+15%)",
-                weather_sensitivity: 21,
-                vulnerable_users: "Low (Grade-separated motorway)",
+                primary_driver: "Unrestricted Speed Differentials (+34%), Wet Surface Hydroplaning (+19%)",
+                weather_sensitivity: 24,
+                vulnerable_users: "Low (Grade-separated access)",
                 ped_penalty: 0,
-                coords: [[-33.8688, 151.2093], [-33.3000, 151.4000], [-32.9283, 151.7817]]
+                coords: [[28.6950, 77.1450], [28.7050, 77.1550], [28.7150, 77.1650]]
+            },
+            {
+                id: "ncr_del_03",
+                name: "New Delhi: Inner Ring Road (Rajouri Garden Flyover)",
+                baseline_score: 55,
+                primary_driver: "Ramp Merging Conflicts (+21%), Stop-and-Go Shear (+12%)",
+                weather_sensitivity: 10,
+                vulnerable_users: "Low (Elevated flyover)",
+                ped_penalty: 0,
+                coords: [[28.6450, 77.1250], [28.6350, 77.1350], [28.6250, 77.1450]]
+            },
+            {
+                id: "ncr_del_04",
+                name: "New Delhi: Connaught Place Inner Circle",
+                baseline_score: 48,
+                primary_driver: "Pedestrian Right-of-Way Conflicts (+25%), Low Angle Sun Glare (+8%)",
+                weather_sensitivity: 12,
+                vulnerable_users: "Very High (Dense retail pedestrian activity)",
+                ped_penalty: 9,
+                coords: [[28.6328, 77.2185], [28.6315, 77.2200], [28.6300, 77.2185], [28.6315, 77.2170], [28.6328, 77.2185]]
+            },
+            {
+                id: "ncr_del_05",
+                name: "New Delhi: ITO Intersection (Bahadur Shah Zafar Marg)",
+                baseline_score: 79,
+                primary_driver: "Multi-Phase Signal Congestion (+31%), Cross-Traffic Shear (+22%)",
+                weather_sensitivity: 16,
+                vulnerable_users: "High (Transit Hub & Pedestrians)",
+                ped_penalty: 9,
+                coords: [[28.6300, 77.2400], [28.6275, 77.2415], [28.6250, 77.2430]]
+            },
+            {
+                id: "ncr_gur_01",
+                name: "Gurugram: NH48 Delhi-Gurgaon Expressway",
+                baseline_score: 87,
+                primary_driver: "High-Volume Weaving (+39%), Toll Plaza Convergence (+25%)",
+                weather_sensitivity: 26,
+                vulnerable_users: "Low (Pure vehicular access)",
+                ped_penalty: 0,
+                coords: [[28.5300, 77.1000], [28.4800, 77.0600], [28.4200, 77.0100]]
+            },
+            {
+                id: "ncr_noi_01",
+                name: "Noida: Noida-Greater Noida Expressway",
+                baseline_score: 74,
+                primary_driver: "Unregulated High Speeds (+33%), Winter Fog Visibility Loss (+28%)",
+                weather_sensitivity: 22,
+                vulnerable_users: "Low (Fenced expressway boundary)",
+                ped_penalty: 0,
+                coords: [[28.5400, 77.3300], [28.4800, 77.3900], [28.4200, 77.4500]]
             }
         ];
 
         const segmentStore = new Map();
         const renderedLayers = new Map();
         
-        let activeSegmentId = "asia_ind_01";
+        let activeSegmentId = "ncr_son_01";
         let isForecastActive = false;
         let activeRiskFilter = "ALL";
         let map;
@@ -373,22 +273,22 @@
         const interventionChks = document.querySelectorAll('.intervention-chk');
 
         function initApp() {
+            // Localized Map View: Centered between Delhi and Sonipat for full NCR visibility
             map = L.map('map', { 
                 zoomControl: false, 
                 preferCanvas: true,
-                minZoom: 2,
+                minZoom: 8,
                 maxZoom: 18,
-                worldCopyJump: true
-            }).setView([20.0, 10.0], 2);
+            }).setView([28.8000, 77.1500], 10);
             
             const mapTilerKey = 'XCfg1JwEXr5FzLNEj3BR';
             L.tileLayer(`https://api.maptiler.com/maps/dataviz-dark/256/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
                 attribution: '&copy; MapTiler &copy; OpenStreetMap',
-                noWrap: false
+                noWrap: true
             }).addTo(map);
 
-            // Load static deployment data instantly
-            worldwideNetworkData.forEach(corridor => {
+            // Load static local deployment data instantly
+            localNetworkData.forEach(corridor => {
                 segmentStore.set(corridor.id, corridor);
             });
 
@@ -416,8 +316,8 @@
             filterAndRenderLayers();
             updateUI();
 
-            selCompA.value = "asia_ind_01";
-            selCompB.value = "eu_gbr_01";
+            selCompA.value = "ncr_son_01";
+            selCompB.value = "ncr_del_01";
             updateComparisonTable();
         }
 
@@ -438,7 +338,7 @@
 
                 const target = segmentStore.get(matchedId);
                 if (target && target.coords.length > 0) {
-                    map.flyTo(target.coords[0], 8, { duration: 1.8 });
+                    map.flyTo(target.coords[0], 14, { duration: 1.5 });
                 }
             }
         }
@@ -482,7 +382,7 @@
 
                 const polyline = L.polyline(segment.coords, {
                     color: style.color,
-                    weight: isActive ? 8 : 4.5,
+                    weight: isActive ? 10 : 6,
                     opacity: isActive ? 1.0 : 0.75,
                     smoothFactor: 1.0
                 }).bindTooltip(`<b>${segment.name}</b><br>Composite Risk: ${score} (${style.text})`, {
@@ -512,7 +412,7 @@
                     const style = getScoreStyle(score);
                     layer.setStyle({
                         color: style.color,
-                        weight: isActive ? 8 : 4.5,
+                        weight: isActive ? 10 : 6,
                         opacity: isActive ? 1.0 : 0.75
                     });
                 }
@@ -587,7 +487,7 @@
             
             if (!activeSegment) {
                 document.getElementById('currentScoreValue').textContent = "--";
-                document.getElementById('shapDrivers').textContent = "Select a global corridor...";
+                document.getElementById('shapDrivers').textContent = "Select a local corridor...";
                 scoreDisplay.className = "p-3 rounded-lg text-center font-bold text-xl border border-slate-700 bg-slate-800 text-white flex-shrink-0 mt-2";
                 refreshAllLayerStyles();
                 return;
@@ -601,7 +501,7 @@
                 chkPed.checked = false;
                 chkPed.disabled = true;
                 pedLabel.style.opacity = '0.45';
-                pedLabel.title = "Not applicable: Grade-separated corridor with zero VRU activity";
+                pedLabel.title = "Not applicable: Grade-separated corridor with minimal VRU activity";
             } else {
                 chkPed.disabled = false;
                 pedLabel.style.opacity = '1';
